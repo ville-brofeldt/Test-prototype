@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Prototype test</title>
+<style>
+  :root {
+    --bg: #FAFAF8;
+    --ink: #201D19;
+    --muted: #7A746C;
+    --border: #E4DFD8;
+    --red: #C1443C;
+    --green: #3D7A5C;
+    --blue: #3661A3;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+  }
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+  }
+  .cfp-card {
+    width: 100%;
+    max-width: 420px;
+    animation: cfp-fade 0.35s ease;
+  }
+  @keyframes cfp-fade {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .cfp-steps { display: flex; gap: 6px; margin-bottom: 28px; }
+  .cfp-steps span { height: 3px; flex: 1; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .cfp-steps span.done { background: var(--ink); }
+  h1.cfp-title { font-size: 22px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.01em; }
+  p.cfp-sub { color: var(--muted); font-size: 14.5px; margin: 0 0 28px; line-height: 1.5; }
+  .cfp-swatches { display: flex; gap: 12px; margin-bottom: 32px; }
+  .cfp-swatch {
+    flex: 1; aspect-ratio: 1; border-radius: var(--radius); border: 2px solid transparent;
+    cursor: pointer; display: flex; align-items: flex-end; justify-content: center;
+    padding-bottom: 10px; font-size: 13px; font-weight: 500; color: #fff;
+    transition: transform 0.15s ease, border-color 0.15s ease;
+  }
+  .cfp-swatch:hover { transform: translateY(-2px); }
+  .cfp-swatch.selected { border-color: var(--ink); }
+  .cfp-swatch[data-c="red"] { background: var(--red); }
+  .cfp-swatch[data-c="green"] { background: var(--green); }
+  .cfp-swatch[data-c="blue"] { background: var(--blue); }
+  .cfp-btn {
+    width: 100%; padding: 13px; border-radius: var(--radius); border: none;
+    background: var(--ink); color: #fff; font-size: 15px; font-weight: 500; cursor: pointer;
+    transition: opacity 0.15s ease;
+  }
+  .cfp-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .cfp-btn:not(:disabled):hover { opacity: 0.88; }
+  .cfp-stars { display: flex; gap: 8px; margin-bottom: 24px; }
+  .cfp-star {
+    font-size: 30px; cursor: pointer; color: var(--border); line-height: 1;
+    transition: color 0.1s ease, transform 0.1s ease;
+  }
+  .cfp-star.on { color: #E0A93B; }
+  .cfp-star:hover { transform: scale(1.08); }
+  textarea.cfp-text {
+    width: 100%; min-height: 100px; resize: vertical; border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 12px; font-size: 14.5px; font-family: inherit;
+    margin-bottom: 20px; background: #fff;
+  }
+  textarea.cfp-text:focus, .cfp-swatch:focus-visible, .cfp-star:focus-visible, .cfp-btn:focus-visible {
+    outline: 2px solid var(--ink); outline-offset: 2px;
+  }
+  .cfp-thanks-mark {
+    width: 44px; height: 44px; border-radius: 50%; background: var(--ink); color: #fff;
+    display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 20px;
+  }
+</style>
+</head>
+<body>
+
+<div id="cfp-content"></div>
+
+<script>
+(function () {
+  // Paste the /exec URL from your Apps Script deployment here:
+  const WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxoL4Jr4kq0nGyXWjfaFIHFQ446Gx9PhlJG5KpiOH-vx2T7jc38Ul3C_FlF06pg5I9A/exec";
+
+  const root = document.getElementById("cfp-content");
+  const sessionId = (crypto.randomUUID ? crypto.randomUUID() : ("sess-" + Date.now() + "-" + Math.random().toString(36).slice(2)));
+
+  let pageLoadTime = Date.now();
+  let selectedColor = null;
+  let selectedStars = 0;
+
+  function sendToSheet(partial) {
+    const payload = Object.assign({ sessionId }, partial);
+    try {
+      fetch(WEBHOOK_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payload)
+      });
+    } catch (e) {
+      console.error("Failed to send to sheet:", e);
+    }
+  }
+
+  function steps(activeIndex) {
+    let html = '<div class="cfp-steps">';
+    for (let i = 0; i < 3; i++) {
+      html += '<span class="' + (i <= activeIndex ? "done" : "") + '"></span>';
+    }
+    html += "</div>";
+    return html;
+  }
+
+  function renderPage1() {
+    root.innerHTML =
+      '<div class="cfp-card">' +
+      steps(0) +
+      '<h1 class="cfp-title">Pick a theme</h1>' +
+      '<p class="cfp-sub">Choose the colour you\'d want this page to use.</p>' +
+      '<div class="cfp-swatches">' +
+      '<button class="cfp-swatch" data-c="red" tabindex="0" aria-label="Red"></button>' +
+      '<button class="cfp-swatch" data-c="green" tabindex="0" aria-label="Green"></button>' +
+      '<button class="cfp-swatch" data-c="blue" tabindex="0" aria-label="Blue"></button>' +
+      '</div>' +
+      '<button class="cfp-btn" id="cfp-done" disabled>Done</button>' +
+      '</div>';
+
+    root.querySelectorAll(".cfp-swatch").forEach(function (el) {
+      el.addEventListener("click", function () {
+        root.querySelectorAll(".cfp-swatch").forEach(function (s) { s.classList.remove("selected"); });
+        el.classList.add("selected");
+        selectedColor = el.getAttribute("data-c");
+        document.getElementById("cfp-done").disabled = false;
+      });
+    });
+
+    document.getElementById("cfp-done").addEventListener("click", function () {
+      const timeToConfirmMs = Date.now() - pageLoadTime;
+      sendToSheet({
+        colorTheme: selectedColor,
+        timeToConfirmMs: timeToConfirmMs,
+        startedAt: new Date(pageLoadTime).toISOString()
+      });
+      pageLoadTime = Date.now();
+      renderPage2();
+    });
+  }
+
+  function renderPage2() {
+    root.innerHTML =
+      '<div class="cfp-card">' +
+      steps(1) +
+      '<h1 class="cfp-title">How did that feel?</h1>' +
+      '<p class="cfp-sub">Rate the flow and tell us anything you noticed.</p>' +
+      '<div class="cfp-stars" role="radiogroup" aria-label="Star rating">' +
+      [1, 2, 3, 4, 5].map(function (n) {
+        return '<span class="cfp-star" data-n="' + n + '" tabindex="0" role="radio" aria-checked="false">★</span>';
+      }).join("") +
+      '</div>' +
+      '<textarea class="cfp-text" id="cfp-feedback" placeholder="Any thoughts on the flow..."></textarea>' +
+      '<button class="cfp-btn" id="cfp-submit" disabled>Submit</button>' +
+      '</div>';
+
+    function paintStars() {
+      root.querySelectorAll(".cfp-star").forEach(function (s) {
+        const n = parseInt(s.getAttribute("data-n"), 10);
+        s.classList.toggle("on", n <= selectedStars);
+        s.setAttribute("aria-checked", n === selectedStars ? "true" : "false");
+      });
+    }
+
+    root.querySelectorAll(".cfp-star").forEach(function (s) {
+      s.addEventListener("click", function () {
+        selectedStars = parseInt(s.getAttribute("data-n"), 10);
+        paintStars();
+        document.getElementById("cfp-submit").disabled = false;
+      });
+    });
+
+    document.getElementById("cfp-submit").addEventListener("click", function () {
+      const feedbackText = document.getElementById("cfp-feedback").value.trim();
+      sendToSheet({
+        starRating: selectedStars,
+        feedbackText: feedbackText,
+        completedAt: new Date().toISOString()
+      });
+      renderPage3();
+    });
+  }
+
+  function renderPage3() {
+    root.innerHTML =
+      '<div class="cfp-card">' +
+      steps(2) +
+      '<div class="cfp-thanks-mark">✓</div>' +
+      '<h1 class="cfp-title">That\'s everything</h1>' +
+      '<p class="cfp-sub">Thanks for taking the time to try this out — your input helps a lot.</p>' +
+      '</div>';
+  }
+
+  renderPage1();
+})();
+</script>
+
+</body>
+</html>
