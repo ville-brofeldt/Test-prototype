@@ -101,16 +101,16 @@
 
   function sendToSheet(partial) {
     const payload = Object.assign({ sessionId }, partial);
-    try {
-      fetch(WEBHOOK_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify(payload)
-      });
-    } catch (e) {
+    fetch(WEBHOOK_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload)
+    }).then(function () {
+      console.log("Sent to sheet:", payload);
+    }).catch(function (e) {
       console.error("Failed to send to sheet:", e);
-    }
+    });
   }
 
   function steps(activeIndex) {
