@@ -98,20 +98,26 @@
   let pageLoadTime = Date.now();
   let selectedColor = null;
   let selectedStars = 0;
+  const sessionData = {
+    sessionId: sessionId,
+    colorTheme: "",
+    timeToConfirmMs: "",
+    starRating: "",
+    feedbackText: "",
+    startedAt: "",
+    completedAt: ""
+  };
 
   function sendToSheet(partial) {
-    const payload = Object.assign({ sessionId }, partial);
+    Object.assign(sessionData, partial);
     fetch(WEBHOOK_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(sessionData)
     }).then(function (res) {
-      console.log("Response status:", res.status);
-      return res.text();
-    }).then(function (text) {
-      console.log("Response body:", text);
+      if (!res.ok) console.error("Webhook responded with status", res.status);
     }).catch(function (e) {
-      console.error("Failed to send to sheet:", e);
+      console.error("Failed to send to Lark:", e);
     });
   }
 
