@@ -112,10 +112,11 @@
     Object.assign(sessionData, partial);
     fetch(WEBHOOK_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify(sessionData)
-    }).then(function (res) {
-      if (!res.ok) console.error("Webhook responded with status", res.status);
+    }).then(function () {
+      console.log("Sent to Lark:", sessionData);
     }).catch(function (e) {
       console.error("Failed to send to Lark:", e);
     });
