@@ -103,11 +103,13 @@
     const payload = Object.assign({ sessionId }, partial);
     fetch(WEBHOOK_URL, {
       method: "POST",
-      mode: "no-cors",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
-    }).then(function () {
-      console.log("Sent to sheet:", payload);
+    }).then(function (res) {
+      console.log("Response status:", res.status);
+      return res.text();
+    }).then(function (text) {
+      console.log("Response body:", text);
     }).catch(function (e) {
       console.error("Failed to send to sheet:", e);
     });
